@@ -2,41 +2,48 @@
 #include <sstream>
 #include <iomanip>
 
+// Constructor: Inicializa el tablero con celdas vacías
 Game::Game() : board(ROWS, std::vector<Cell>(COLS, EMPTY)) {}
 
+// Método para realizar un movimiento en una columna para un jugador específico
 bool Game::makeMove(int col, Cell player)
 {
       if (col < 0 || col >= COLS || board[0][col] != EMPTY)
       {
-            return false;
+            return false; // Movimiento inválido
       }
       for (int row = ROWS - 1; row >= 0; --row)
       {
             if (board[row][col] == EMPTY)
             {
-                  board[row][col] = player;
+                  board[row][col] = player; // Realiza el movimiento en la celda vacía más baja de la columna
                   return true;
             }
       }
       return false;
 }
 
-bool Game::checkWin(Cell player) for (int row = 0; row < ROWS; ++row)
+// Método para verificar si un jugador ha ganado
+bool Game::checkWin(Cell player)
 {
-      for (int col = 0; col < COLS; ++col)
+      for (int row = 0; row < ROWS; ++row)
       {
-            if (board[row][col] == player &&
-                (checkDirection(row, col, 1, 0, player) ||
-                 checkDirection(row, col, 0, 1, player) ||
-                 checkDirection(row, col, 1, 1, player) ||
-                 checkDirection(row, col, 1, -1, player)))
+            for (int col = 0; col < COLS; ++col)
             {
-                  return true;
+                  if (board[row][col] == player &&
+                      (checkDirection(row, col, 1, 0, player) ||
+                       checkDirection(row, col, 0, 1, player) ||
+                       checkDirection(row, col, 1, 1, player) ||
+                       checkDirection(row, col, 1, -1, player)))
+                  {
+                        return true;
+                  }
             }
       }
       return false;
 }
 
+// Método para verificar si el tablero está lleno (empate)
 bool Game::isFull()
 {
       for (int col = 0; col < COLS; ++col)
@@ -49,6 +56,7 @@ bool Game::isFull()
       return true;
 }
 
+// Método para obtener el estado actual del tablero como un vector de cadenas
 std::vector<std::string> Game::getBoard() const
 {
       std::vector<std::string> boardStr(ROWS, std::string(COLS, ' '));
@@ -69,6 +77,7 @@ std::vector<std::string> Game::getBoard() const
       return boardStr;
 }
 
+// Método auxiliar para verificar si hay 4 en línea en una dirección específica
 bool Game::checkDirection(int row, int col, int dRow, int dCol, Cell player)
 {
       int count = 0;

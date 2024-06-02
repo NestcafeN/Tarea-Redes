@@ -8,6 +8,7 @@
 #include <vector>
 #include <sstream>
 
+// Función para imprimir el tablero de juego en la consola
 void print_board(const std::vector<std::string> &board)
 {
       std::cout << "\nTABLERO\n";
@@ -21,9 +22,10 @@ void print_board(const std::vector<std::string> &board)
             std::cout << std::endl;
       }
       std::cout << "  -------------\n";
-      std::cout << "  1 2 3 4 5 6 7\n";
+      std::cout << "  1 2 3 4 5 6 7\n"; // Columnas numeradas
 }
 
+// Función para procesar los datos del tablero recibidos y mostrarlos en la consola
 void processBoard(const std::string &data)
 {
       std::istringstream stream(data);
@@ -39,17 +41,17 @@ void processBoard(const std::string &data)
 }
 
 int main(int argc, char *argv[])
-{
+{ // Verifica que los argumentos sean correctos
       if (argc != 3)
       {
             std::cerr << "Usage: " << argv[0] << " <server_ip> <port>" << std::endl;
             return 1;
       }
-
+      // Crea el socket del cliente
       int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
       if (clientSocket == -1)
       {
-            std::cerr << "Could not create socket" << std::endl;
+            std::cerr << "No se pudo crear el socket" << std::endl;
             return 1;
       }
 
@@ -59,30 +61,33 @@ int main(int argc, char *argv[])
       serverAddr.sin_family = AF_INET;
       serverAddr.sin_port = htons(port);
 
+      // Convierte la dirección IP y la asigna a la estructura de direcciones
       if (inet_pton(AF_INET, serverIp.c_str(), &serverAddr.sin_addr) <= 0)
       {
-            std::cerr << "Invalid address" << std::endl;
+            std::cerr << "Direccion IP erronea" << std::endl;
             close(clientSocket);
             return 1;
       }
-
+      // Conecta al servidor
       if (connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
       {
-            std::cerr << "Connection failed" << std::endl;
+            std::cerr << "Conexion al servidor fallida" << std::endl;
             close(clientSocket);
             return 1;
       }
 
       char buffer[2048];
+      // Recibe y muestra el mensaje de inicio
       recv(clientSocket, buffer, sizeof(buffer), 0);
       std::cout << buffer << std::endl;
 
       while (true)
       {
+            // Limpia el buffer y recibe datos del servidor
             memset(buffer, 0, sizeof(buffer));
             recv(clientSocket, buffer, sizeof(buffer), 0);
             std::string receivedData(buffer);
-
+            // Procesa y muestra el tablero si los datos contienen el marcador de fin de tablero
             if (receivedData.find("---") != std::string::npos)
             {
                   processBoard(receivedData);
@@ -91,12 +96,12 @@ int main(int argc, char *argv[])
             {
                   std::cout << receivedData;
             }
-
+            // Si el mensaje recibido indica que alguien ha ganado o que hubo un empate, termina el juego
             if (receivedData.find("Gana") != std::string::npos || receivedData.find("Empate") != std::string::npos)
             {
                   break;
             }
-
+            // Si es el turno del cliente, pide la columna donde quiere jugar
             if (receivedData.find("Tu turno") != std::string::npos)
             {
                   std::cout << "Introduce la columna en la que quieres Jugar:  ";
@@ -107,7 +112,7 @@ int main(int argc, char *argv[])
                   send(clientSocket, colStr.c_str(), colStr.size(), 0);
             }
       }
-
+      // Cierra el socket del cliente
       close(clientSocket);
       return 0;
 }
