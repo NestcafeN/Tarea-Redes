@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include "common.hpp"
 
-void handleClient(int clientSocket);
+void handleClient(int clientSocket, std::string clientID);
 
 int main(int argc, char *argv[])
 {
@@ -38,15 +38,19 @@ int main(int argc, char *argv[])
             return 1;
       }
 
-      listen(serverSocket, 3);
+      listen(serverSocket, 10);
       std::cout << "Esperando conexiones ..." << std::endl;
 
       while (true)
       {
-            int clientSocket = accept(serverSocket, nullptr, nullptr);
+            sockaddr_in clientAddr;
+            socklen_t clientAddrLen = sizeof(clientAddr);
+            int clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, &clientAddrLen);
             if (clientSocket >= 0)
             {
-                  std::thread clientThread(handleClient, clientSocket);
+                  std::string clientID = std::string(inet_ntoa(clientAddr.sin_addr)) + ":" + std::to_string(ntohs(clientAddr.sin_port));
+                  std::cout << "Juego nuevo[" << clientID << "]" << std::endl;
+                  std::thread clientThread(handleClient, clientSocket, clientID);
                   clientThread.detach();
             }
       }
@@ -55,21 +59,22 @@ int main(int argc, char *argv[])
       return 0;
 }
 
-void handleClient(int clientSocket)
+void handleClient(int clientSocket, std::string clientID)
 {
       Game game;
       bool gameRunning = true;
       Cell currentPlayer = (rand() % 2 == 0) ? PLAYER1 : PLAYER2;
       char buffer[1024];
 
-      std::string startMsg = (currentPlayer == PLAYER1) ? "Cliente comienza\n" : "Servidor comienza\n";
-      send(clientSocket, startMsg.c_str(), startMsg.size(), 0);
+      std::string startMsg = (currentPlayer == PLAYER1) ? "inicia juego el cliente" : "inicia juego el servidor";
+      std::cout << "Juego [" << clientID << "]: " << startMsg << "." << std::endl;
+      std::string clientStartMsg = (currentPlayer == PLAYER1) ? "Tu turno\n" : "";
+      send(clientSocket, clientStartMsg.c_str(), clientStartMsg.size(), 0);
 
       while (gameRunning)
       {
             std::vector<std::string> board = game.getBoard();
             std::ostringstream boardStream;
-            boardStream << "TABLERO\n";
             for (const auto &line : board)
             {
                   boardStream << line << "\n";
@@ -80,9 +85,11 @@ void handleClient(int clientSocket)
 
             if (currentPlayer == PLAYER1)
             {
+                  send(clientSocket, "Tu turno\n", 9, 0);
                   recv(clientSocket, buffer, sizeof(buffer), 0);
                   int col = std::stoi(buffer);
                   game.makeMove(col, PLAYER1);
+                  std::cout << "Juego [" << clientID << "]: cliente juega columna " << col + 1 << "." << std::endl;
                   if (game.checkWin(PLAYER1))
                   {
                         std::string winMsg = "Gana el Cliente\n";
@@ -97,8 +104,7 @@ void handleClient(int clientSocket)
                   {
                         col = rand() % COLS;
                   }
-                  std::string moveMsg = "Servidor juega columna " + std::to_string(col) + "\n";
-                  send(clientSocket, moveMsg.c_str(), moveMsg.size(), 0);
+                  std::cout << "Juego [" << clientID << "]: servidor juega columna " << col + 1 << "." << std::endl;
                   if (game.checkWin(PLAYER2))
                   {
                         std::string winMsg = "Gana el Servidor\n";
@@ -118,4 +124,5 @@ void handleClient(int clientSocket)
       }
 
       close(clientSocket);
+      std::cout << "Juego [" << clientID << "]: fin del juego." << std::endl;
 }

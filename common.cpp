@@ -21,17 +21,17 @@ bool Game::makeMove(int col, Cell player)
       return false;
 }
 
-bool Game::checkWin(Cell player)
+bool Game::checkWin(Cell player) for (int row = 0; row < ROWS; ++row)
 {
-      for (int row = 0; row < ROWS; ++row)
+      for (int col = 0; col < COLS; ++col)
       {
-            for (int col = 0; col < COLS; ++col)
+            if (board[row][col] == player &&
+                (checkDirection(row, col, 1, 0, player) ||
+                 checkDirection(row, col, 0, 1, player) ||
+                 checkDirection(row, col, 1, 1, player) ||
+                 checkDirection(row, col, 1, -1, player)))
             {
-                  if (board[row][col] == player &&
-                      (checkDirection(row, col, 1, 0, player) ||
-                       checkDirection(row, col, 0, 1, player) ||
-                       checkDirection(row, col, 1, 1, player) ||
-                       checkDirection(row, col, 1, -1, player)))
+                  return true;
             }
       }
       return false;

@@ -24,18 +24,6 @@ void print_board(const std::vector<std::string> &board)
       std::cout << "  1 2 3 4 5 6 7\n";
 }
 
-void handleMessage(const std::string &message)
-{
-      if (message.find("Gana") != std::string::npos || message.find("Empate") != std::string::npos)
-      {
-            std::cout << message;
-      }
-      else if (message.find("Servidor juega columna") != std::string::npos)
-      {
-            std::cout << message;
-      }
-}
-
 void processBoard(const std::string &data)
 {
       std::istringstream stream(data);
@@ -95,13 +83,13 @@ int main(int argc, char *argv[])
             recv(clientSocket, buffer, sizeof(buffer), 0);
             std::string receivedData(buffer);
 
-            if (receivedData.find("TABLERO") != std::string::npos)
+            if (receivedData.find("---") != std::string::npos)
             {
                   processBoard(receivedData);
             }
             else
             {
-                  handleMessage(receivedData);
+                  std::cout << receivedData;
             }
 
             if (receivedData.find("Gana") != std::string::npos || receivedData.find("Empate") != std::string::npos)
@@ -109,12 +97,15 @@ int main(int argc, char *argv[])
                   break;
             }
 
-            std::cout << "Introduce la columna (1-7): ";
-            int col;
-            std::cin >> col;
-            col--;
-            std::string colStr = std::to_string(col);
-            send(clientSocket, colStr.c_str(), colStr.size(), 0);
+            if (receivedData.find("Tu turno") != std::string::npos)
+            {
+                  std::cout << "Introduce la columna en la que quieres Jugar:  ";
+                  int col;
+                  std::cin >> col;
+                  col--;
+                  std::string colStr = std::to_string(col);
+                  send(clientSocket, colStr.c_str(), colStr.size(), 0);
+            }
       }
 
       close(clientSocket);
